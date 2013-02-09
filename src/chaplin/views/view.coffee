@@ -43,23 +43,15 @@ module.exports = class View extends Backbone.View
   subviewsByName: null
 
   constructor: (options) ->
-    # Wrap `initialize` so `afterInitialize` is called afterwards
-    # Only wrap if there is an overriding method, otherwise we
-    # can call the `after-` method directly
-    unless @initialize is View::initialize
-      utils.wrapMethod this, 'initialize'
-
-    # Wrap `render` so `afterRender` is called afterwards
-    if @render is View::render
-      @render = _(@render).bind this
-    else
-      utils.wrapMethod this, 'render'
-
     # Copy some options to instance properties
     if options
       _(this).extend _.pick options, [
         'autoRender', 'container', 'containerMethod'
       ]
+
+    # Initialize subviews
+    @subviews = []
+    @subviewsByName = {}
 
     # Call Backbone’s constructor
     super
@@ -73,21 +65,6 @@ module.exports = class View extends Backbone.View
     @listenTo @model, 'dispose', @dispose if @model
     @listenTo @collection, 'dispose', @dispose if @collection
 
-  # Inheriting classes must call `super` in their `initialize` method to
-  # properly inflate subviews and set up options
-  initialize: (options) ->
-    # No super call here, Backbone’s `initialize` is a no-op
-
-    # Initialize subviews
-    @subviews = []
-    @subviewsByName = {}
-
-    # Call `afterInitialize` if `initialize` was not wrapped
-    unless @initializeIsWrapped
-      @afterInitialize()
-
-  # This method is called after a specific `initialize` of a derived class
-  afterInitialize: ->
     # Render automatically if set by options or instance property
     @render() if @autoRender
 
@@ -313,20 +290,20 @@ module.exports = class View extends Backbone.View
       # HTML5-only tags in IE7 and IE8.
       @$el.empty().append html
 
-    # Call `afterRender` if `render` was not wrapped
-    @afterRender() unless @renderIsWrapped
+    # Trigger an event to indicate that we're rendered so listeners
+    # can act upon it.
+    @trigger 'rendered'
 
-    # Return the view
-    this
-
-  # This method is called after a specific `render` of a derived class
-  afterRender: ->
     # Automatically append to DOM if the container element is set
     if @container
       # Append the view to the DOM
       $(@container)[@containerMethod] @el
+
       # Trigger an event
       @trigger 'addedToDOM'
+
+    # Return the view
+    this
 
   # Disposal
   # --------

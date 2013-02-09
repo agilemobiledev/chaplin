@@ -93,28 +93,24 @@ module.exports = class CollectionView extends View
     if (options)
       _(this).extend _.pick options, ['renderItems', 'itemView']
 
-    super
-
-  # Initialization
-  # --------------
-
-  initialize: (options = {}) ->
-    super
-
     # Initialize list for visible items
     @visibleItems = []
 
+    # Call the base view constructor
+    super
+
     # Start observing the collection
-    @addCollectionListeners()
-
-    # Apply a filter if one provided
-    @filter options.filterer if options.filterer?
-
-  # Binding of collection listeners
-  addCollectionListeners: ->
     @listenTo @collection, 'add', @itemAdded
     @listenTo @collection, 'remove', @itemRemoved
     @listenTo @collection, 'reset sort', @itemsResetted
+
+  # Initializing
+  # ------------
+  initialize: (options) ->
+    # Don't call super; the base view's initialize is a no-op.
+
+    # Apply a filter if one provided
+    @filter options.filterer if options.filterer?
 
   # Rendering
   # ---------
